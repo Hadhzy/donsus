@@ -42,7 +42,7 @@ typedef struct {
     int source_id;
     size_t offset;
     long long length;
-} donsus_token_Location;
+} donsus_token_location;
 
 
 struct donsus_token{

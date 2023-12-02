@@ -1,7 +1,4 @@
 // Lexer of the Donsus programming language
-#include "../Include/token.h"
-#include "../Include/lexer.h"
-#include "../Include/internal/ducore_file.h"
 #include <stdio.h>
 #include  <stdlib.h>
 // Donsus internals
@@ -10,6 +7,8 @@
 #include "../Include/internal/ducore_file.h"
 #include "don_array.h"
 
+
+// Todo: Make the code smaller organising similar parts.
 
 char peek(struct donsus_lexer *lexer){
     // getting the next character without increasing position
@@ -26,6 +25,11 @@ char peek(struct donsus_lexer *lexer){
 int create_tokens(struct donsus_lexer *lexer, struct don_array *tokens){
     // identify the token
     char cur = lexer->cur;
+
+    struct donsus_token out_token;
+
+    donsus_token_kind token_kind;
+    donsus_token_location token_location;
 
     switch(cur){
         case '+': {
