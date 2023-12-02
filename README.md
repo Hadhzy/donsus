@@ -1,2 +1,1 @@
 # donsus
-Cpython like interpreter

@@ -3,6 +3,12 @@
 #include "../Include/lexer.h"
 #include "../Include/internal/ducore_file.h"
 #include <stdio.h>
+#include  <stdlib.h>
+// Donsus internals
+#include "../Include/token.h"
+#include "../Include/lexer.h"
+#include "../Include/internal/ducore_file.h"
+#include "don_array.h"
 
 
 char peek(struct donsus_lexer *lexer){
@@ -17,14 +23,50 @@ char peek(struct donsus_lexer *lexer){
 }
 
 
-struct donsus_token* identify_token(struct donsus_lexer *lexer, struct donsus_token *token){
+int create_tokens(struct donsus_lexer *lexer, struct don_array *tokens){
     // identify the token
     char cur = lexer->cur;
 
     switch(cur){
-        case '+':
-            // ignore whitespace
+        case '+': {
+            /*
+             * Obtaining tokens:
+             *  - +
+             *  - +=
+             */
+
+            token_kind = DONSUS_PLUS;
+
+            if (peek(lexer) == '=') {
+                // add token(+=)
+                token_kind =
+                out_token.kind = token_kind;
+
+                // token location
+                token_location.length = 2;
+                token_location.source_id = lexer->source_id;
+                token_location.offset = lexer->position; // TODO: might need to make this more complicated
+
+                out_token.location = token_location;
+
+                don_array_append(tokens, &out_token);
+
+                break;
+            }
+
+            token_kind = DONSUS_PLUS;
+            out_token.kind = token_kind;
+
+            token_location.length = 1;
+            token_location.source_id = lexer->source_id;
+            token_location.offset = lexer->position;
+
+            out_token.location = token_location;
+
+            don_array_append(tokens, &out_token);
+            // add token(+)
             break;
+        }
 
         case '\n':
             // ignore newline
@@ -41,12 +83,15 @@ int main_lexer_loop(struct donsus_lexer *lexer){
     // loop through every character
     char *file_content = lexer->file_struct->file_content;
 
+    don_array tokens; // array of tokens
+    don_array_init(&tokens, DON_ARRAY_INITIAL_CAPACITY); // initial capacity of 4
+
     while (file_content[lexer->position] != '\0') {
-        struct donsus_token* token;
 
         lexer->cur = file_content[lexer->position];
 
-         struct donsus_token* output = identify_token(lexer, token); // identify the token
+
+         int output = create_tokens(lexer, &tokens); // identify the token
 
         ++lexer->position; // Move to the next character
     }
