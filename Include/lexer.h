@@ -8,6 +8,8 @@ struct donsus_lexer{
     char cur;
     size_t position;
     struct donsus_file* file_struct;
+    int source_id;
+
 };
 
 struct donsus_file* new_lexer(struct donsus_file *file_struct);
