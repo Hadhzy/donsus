@@ -1,7 +1,7 @@
 #ifndef DU_TOKEN_H
 #define DU_TOKEN_H
 
-// Todo: Add more tokens
+// Todo: Add more tokens/comment describing them, separate tokens system for operators, names .etc
 
 typedef enum {
     DONSUS_NAME,
@@ -19,14 +19,22 @@ typedef enum {
     DONSUS_COMM,
     DONSUS_SEMI,
     DONSUS_PLUS,
-    DONSUS_MINU,
+    DONSUS_PLUS_EQUAL,
+    DONSUS_MINUS,
+    DONSUS_MINUS_EQUAL,
     DONSUS_STAR,
+    DONSUS_STAR_EQUAL,
+    DONSUS_SLASH,
+    DONSUS_DOUBLE_SLASH,
     DONSUS_SLAS,
     DONSUS_VBAR,
     DONSUS_AMPE,         
     DONSUS_LESS,
+    DONSUS_LESS_EQUAL,
     DONSUS_GREATER,
+    DONSUS_GREATER_EQUAL,
     DONSUS_EQUAL,
+    DONSUS_DOUBLE_EQUAL,
     DONSUS_DOT,
     DONSUS_PERCENT,
     DONSUS_LBRACE,
@@ -45,10 +53,15 @@ typedef struct {
 } donsus_token_location;
 
 
+typedef struct {
+    const char *data;
+    long long length;
+} don_string_view;
+
 struct donsus_token{
     donsus_token_kind kind;
-    donsus_token_location location;
-
+    donsus_token_location* location;
+    don_string_view value;
     // different values(int, real, double)
 };
 

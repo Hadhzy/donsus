@@ -3,7 +3,7 @@
 #include "stdbool.h"
 
 // dynamic array implementation for the donsus programming language
-
+// Todo: allocate needed memory
 void don_array_init(don_array *a, size_t initial_capacity) {
     a->array = malloc(DON_ARRAY_INITIAL_CAPACITY * sizeof(void*));
     a->size = 0;
@@ -68,6 +68,15 @@ void don_array_remove_by_item(don_array *a, struct donsus_token* item){
 
 }
 
+void don_array_merge(don_array *first, don_array *second) {
+    // merge it into the first array automatically
+
+    for (size_t i = 0; i< second->size; i++) {
+        don_array_append(first, second->array[i]);
+    }
+}
+
 void* don_array_get(don_array *a, size_t index){
     return a->array[index];
 }
+

@@ -1,8 +1,11 @@
 #ifndef DU_LEXER_H
 #define DU_LEXER_H
 #include <stdio.h>
+#include "don_array.h"
 
 #include "../Include/internal/ducore_file.h"
+
+#define DEBUG 1 // false by default
 
 struct donsus_lexer{
     char cur;
