@@ -66,7 +66,7 @@ void _de_print_out_tokens(struct don_array *a){
         printf("token_name: %s\n", _de_get_token_from_name(_token->kind));
         printf("token position: %zu\n", _token_location->offset);
         printf("token source_id: %d\n", _token_location->source_id);
-        printf("token value %c\n", *_token->value.data);
+        printf("token value: %c\n", *_token->value.data);
         printf("----------------------------------\n");
     }
 }
@@ -495,7 +495,7 @@ int create_tokens(struct donsus_lexer *lexer, struct don_array *tokens){
             // merge them together
             don_array_merge(tokens, &_identifiers); // add name token back
 
-            //
+            // Printing out tokens
             #ifdef DEBUG
             _de_print_out_tokens(tokens);
             #endif
