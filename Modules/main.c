@@ -1,6 +1,8 @@
 #include "../Include/internal/ducore_init.h" // _DU_ARGB
 #include "../Include/internal/ducore_file.h" // handle_file
 #include "../Include/lexer.h" // new_lexer
+#include "../Include/parser.h" // parser_init
+
 
 int du_run_command(_DU_CONFIG* config, _DU_ARGV* args){
     // 4. layer
@@ -10,7 +12,15 @@ int du_run_command(_DU_CONFIG* config, _DU_ARGV* args){
 
     struct donsus_file* result = handle_file(args, &file_struct);
 
-    new_lexer(result);
+    donsus_parser par = parser_init(&file_struct, new_lexer(result));
+
+    #ifdef DEBUG
+    de_printout_single_token(par.token);
+    de_printout_single_token(parser_next(&par));
+    de_printout_single_token(parser_next(&par));
+    de_printout_single_token(parser_next(&par));
+    de_printout_single_token(parser_next(&par));
+    #endif
 
     return 0;
 }
