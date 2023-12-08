@@ -3,7 +3,9 @@
 
 // Todo: Add more tokens/comment describing them, separate tokens system for operators, names .etc
 
+#define TOKEN_MAX_STRLEN 50
 typedef enum {
+    // Identifier
     DONSUS_NAME,
     DONSUS_NUMBER,
     DONSUS_STRING,
@@ -25,7 +27,7 @@ typedef enum {
     DONSUS_STAR,
     DONSUS_STAR_EQUAL,
     DONSUS_SLASH,
-    DONSUS_DOUBLE_SLASH,
+    DONSUS_SLASH_EQUAL,
     DONSUS_SLAS,
     DONSUS_VBAR,
     DONSUS_AMPE,         
@@ -46,23 +48,16 @@ typedef enum {
 
 } donsus_token_kind;
 
-typedef struct {
-    int source_id;
-    size_t offset;
-    long long length;
-} donsus_token_location;
-
-
-typedef struct {
-    const char *data;
-    long long length;
-} don_string_view;
 
 struct donsus_token{
     donsus_token_kind kind;
-    donsus_token_location* location;
-    don_string_view value;
-    // different values(int, real, double)
+    const char* position;
+    unsigned size;
+    const char * value;
+    unsigned line;
 };
+
+struct donsus_token token_init(donsus_token_kind type, const char * position, unsigned length, unsigned line, char* value);
+struct donsus_token donsus_token_identifier(donsus_token_kind type, const char*position, unsigned size, unsigned line);
 
 #endif // DU_TOKEN_H

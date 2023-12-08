@@ -1,6 +1,7 @@
 #include "../Include/don_array.h" // don_array / token.h
 #include "stdio.h"
 #include "stdbool.h"
+#include <string.h>
 
 // dynamic array implementation for the donsus programming language
 // Todo: allocate needed memory
@@ -28,7 +29,6 @@ void don_array_append(don_array *a, void* element) {
     }
 
     a->array[a->size] = element;
-
     a->size++;
 
 }
@@ -80,3 +80,12 @@ void* don_array_get(don_array *a, size_t index){
     return a->array[index];
 }
 
+char *don_array_add_elements_as_char(don_array *a) {
+    char *str = calloc(a->size, sizeof *str) + 1;
+
+    for (size_t i = 0; i < a->size; i++) {
+        str[i] = *(char*)don_array_get(a, i);
+    }
+
+    return str;
+}

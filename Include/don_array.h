@@ -18,7 +18,7 @@ void don_array_merge(don_array *first, don_array *second);
 void *don_array_get(don_array *a, size_t index);
 void don_array_remove_by_id(don_array *a, size_t index);
 void don_array_remove_by_item(don_array *a, struct donsus_token* item);
-
+char * don_array_add_elements_as_char(don_array *a);
 
 #endif // DU_DON_ARRAY_H
 
