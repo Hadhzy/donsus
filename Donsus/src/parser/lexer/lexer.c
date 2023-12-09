@@ -265,7 +265,7 @@ struct donsus_token donsus_lexer_next(donsus_lexer * lexer){
 
                 }
                 // check for number
-                if isdigit(*lexer->cursor){
+                if (isdigit(*lexer->cursor)) {
                     struct donsus_token token;
                     token = donsus_token_identifier(DONSUS_NUMBER, lexer->cursor++, 1, lexer->line);
                     const char * value = next_number(lexer, &token);
