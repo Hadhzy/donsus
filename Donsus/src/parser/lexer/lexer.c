@@ -3,7 +3,6 @@
 #include <ctype.h> // dl_name_identifier
 #include <stdbool.h>
 #include <string.h>
-#include <langinfo.h>
 // Donsus internals
 #include "../Include/token.h"
 #include "../Include/lexer.h"
