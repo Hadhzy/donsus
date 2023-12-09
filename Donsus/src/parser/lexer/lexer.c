@@ -3,6 +3,7 @@
 #include <ctype.h> // dl_name_identifier
 #include <stdbool.h>
 #include <string.h>
+#include <langinfo.h>
 // Donsus internals
 #include "../Include/token.h"
 #include "../Include/lexer.h"
@@ -26,7 +27,6 @@ char* _de_get_token_from_name(donsus_token_kind kind) {
         case DONSUS_RSQB: return "DONSUS_RSQB";
         case DONSUS_COLO: return "DONSUS_COLO";
         case DONSUS_COMM: return "DONSUS_COMM";
-        case DONSUS_SEMI: return "DONSUS_SEMI";
         case DONSUS_PLUS: return "DONSUS_PLUS";
         case DONSUS_PLUS_EQUAL: return "DONSUS_PLUS_EQUAL";
         case DONSUS_MINUS: return "DONSUS_MINUS";
@@ -34,10 +34,7 @@ char* _de_get_token_from_name(donsus_token_kind kind) {
         case DONSUS_STAR: return "DONSUS_STAR";
         case DONSUS_STAR_EQUAL: return "DONSUS_STAR_EQUAL";
         case DONSUS_SLASH: return "DONSUS_SLASH";
-        case DONSUS_DOUBLE_SLASH: return "DONSUS_DOUBLE_SLASH";
-        case DONSUS_SLAS: return "DONSUS_SLAS";
-        case DONSUS_VBAR: return "DONSUS_VBAR";
-        case DONSUS_AMPE: return "DONSUS_AMPE";
+        case DONSUS_SLASH_EQUAL: return "DONSUS_SLASH_EQUAL";
         case DONSUS_LESS: return "DONSUS_LESS";
         case DONSUS_LESS_EQUAL: return "DONSUS_LESS_EQUAL";
         case DONSUS_GREATER: return "DONSUS_GREATER";
@@ -48,10 +45,12 @@ char* _de_get_token_from_name(donsus_token_kind kind) {
         case DONSUS_PERCENT: return "DONSUS_PERCENT";
         case DONSUS_LBRACE: return "DONSUS_LBRACE";
         case DONSUS_RBRACE: return "DONSUS_RBRACE";
-        case DONSUS_TILDE: return "DONSUS_TILDE";
         case DONSUS_CIRCUMFLEX: return "DONSUS_CIRCUMFLEX";
-        case DONSUS_AT: return "DONSUS_AT";
         case DONSUS_EXCLAMATION: return "DONSUS_EXCLAMATION";
+        case DONSUS_COMMENT: return "DONSUS_COMMENT";
+        case DONSUS_SINGLE_QUOTE : return "DONSUS_SINGLE_QUOTE";
+        case DONSUS_DOUBLE_QUOTE : return "DONSUS_DOUBLE_QUOTE";
+        case DONSUS_THREE_DOTS: return "DONSUS_THREE_DOTS";
 
         default:
             return "UNKNOWN_TOKEN_KIND";
@@ -80,18 +79,24 @@ static bool iscontinue(char c){
     return isstart(c) || isdigit(c);
 }
 
+static bool isstring_continue(const char c){
+    if(c == '\'' || c == '"') return false;
+    return true;
+}
+
 static const char* next_identifier(donsus_lexer * lexer, donsus_token * token){
-    char* result = NULL;
-    char first = *--lexer->cursor; // TODO: Avoid this in the future
+    char * result = NULL;
+    char first = *--lexer->cursor;
+    --token->size; // better solution in the future? TBD
+
     while (iscontinue(*lexer->cursor)) {
-        lexer->cursor++;
         char* tmp = (char*)realloc(result, sizeof(char) * token->size); //
         tmp[token->size] = *lexer->cursor; // *(tmp+token->size) = *lexer->cursor
+        lexer->cursor++;
         token->size++;
         result = tmp;
-
     }
-    --token->size; // better solution in the future? TBD
+
     result[0] = first;
     return result;
 }
@@ -111,6 +116,26 @@ static const char* next_number(donsus_lexer * lexer, donsus_token * token) {
     return result;
 }
 
+
+static const char * next_string(donsus_lexer * lexer, donsus_token * token){
+    char * result = NULL;
+    char first = *--lexer->cursor;
+    --token->size; // better solution in the future? TBD
+
+    while (isstring_continue(*lexer->cursor)) {
+        char* tmp = (char*)realloc(result, sizeof(char) * token->size + 1); //
+        tmp[token->size] = *lexer->cursor; // *(tmp+token->size) = *lexer->cursor
+        lexer->cursor++;
+        token->size++;
+        result = tmp;
+    }
+
+    result[0] = first;
+    return result;
+}
+
+
+
 const char peek(donsus_lexer * lexer){
     char result = *++lexer->cursor;
     return result;
@@ -123,7 +148,7 @@ struct donsus_token donsus_lexer_next(donsus_lexer * lexer){
 
             // Handles special line characters
             case '\t': {
-                return token_init(DONSUS_INDENT, lexer->cursor++,  1, lexer->line, "");
+                return token_init(DONSUS_INDENT, lexer->cursor++,  1, lexer->line, NULL);
             }
 
             case ' ':
@@ -135,16 +160,19 @@ struct donsus_token donsus_lexer_next(donsus_lexer * lexer){
                 lexer->line++;
                 break;
 
+            case '!':
+                return token_init(DONSUS_EXCLAMATION, lexer->cursor++, 1, lexer->line, "!");
+
             // Arithmetic operators
             case '+': {
                 if (peek(lexer) == '=') return token_init(DONSUS_PLUS_EQUAL, lexer->cursor++, 2, lexer->line, "+=") ;
+                if (peek(lexer) == '+') return token_init(DONSUS_INCREMENT, lexer->cursor++, 2, lexer->line, "++") ;
                 return token_init(DONSUS_PLUS, lexer->cursor++, 1, lexer->line, "+");
-
             }
 
             case '-': {
                 if (peek(lexer) == '=') return token_init(DONSUS_MINUS_EQUAL, lexer->cursor++, 2, lexer->line, "-=");
-
+                if (peek(lexer) == '-') return token_init(DONSUS_DECREMENT, lexer->cursor++, 2, lexer->line, "--") ;
                 return token_init(DONSUS_MINUS, lexer->cursor++, 1, lexer->line, "-");
             }
 
@@ -171,6 +199,47 @@ struct donsus_token donsus_lexer_next(donsus_lexer * lexer){
                 return token_init(DONSUS_RPAR, lexer->cursor++, 1, lexer->line, ")");
             }
 
+            case '[': {
+                return token_init(DONSUS_LSQB, lexer->cursor++, 1, lexer->line, "[");
+            }
+
+            case ']': {
+                return token_init(DONSUS_RSQB, lexer->cursor++, 1, lexer->line, "]");
+            }
+
+            case '{': {
+                return token_init(DONSUS_LBRACE, lexer->cursor++, 1, lexer->line, "{");
+            }
+
+            case '}': {
+                return token_init(DONSUS_RBRACE, lexer->cursor++, 1, lexer->line, "}");
+            }
+
+            case '^': {
+                return token_init(DONSUS_CIRCUMFLEX, lexer->cursor++, 1, lexer->line, "^");
+            }
+
+            case ':': {
+                return token_init(DONSUS_COLO, lexer->cursor++, 1, lexer->line, ":");
+            }
+
+            case ',': {
+                return token_init(DONSUS_COMM, lexer->cursor++, 1, lexer->line, ",");
+            }
+
+            case '.': {
+                if (peek(lexer) == '.' && peek(lexer) == '.') return token_init(DONSUS_THREE_DOTS, lexer->cursor++, 3, lexer->line, "...");
+                return token_init(DONSUS_DOT, lexer->cursor++, 1, lexer->line, ".");
+            }
+
+            case '%': {
+                return token_init(DONSUS_PERCENT, lexer->cursor++, 1, lexer->line, "%");
+            }
+
+            case '#': {
+                return token_init(DONSUS_COMMENT, lexer->cursor++, 1, lexer->line, "#");
+            }
+
             case '>': {
                 if (peek(lexer) == '=') return token_init(DONSUS_GREATER_EQUAL, lexer->cursor++, 2, lexer->line, ">=") ;
                 return token_init(DONSUS_GREATER, lexer->cursor++, 1, lexer->line, ">");
@@ -180,8 +249,20 @@ struct donsus_token donsus_lexer_next(donsus_lexer * lexer){
                 if (peek(lexer) == '=') return token_init(DONSUS_LESS_EQUAL, lexer->cursor++, 2, lexer->line, "<=") ;
                 return token_init(DONSUS_LESS, lexer->cursor++, 1, lexer->line, "<");
             }
+            // DONSUS_STRING sdljfsdfjlsdlfjsd DONSUS_STRING
+            case '"': {
+                // Add more stuff here
+                return token_init(DONSUS_DOUBLE_QUOTE, lexer->cursor++, 1, lexer->line, "\"");
+            }
+
+
+            case '\'': {
+                // Add more stuff here
+                return token_init(DONSUS_SINGLE_QUOTE, lexer->cursor++, 1, lexer->line, "\'");
+            }
 
             default: {
+
                 // check for identifier
                 if (isstart(*lexer->cursor)) {
                     struct donsus_token token = donsus_token_identifier(DONSUS_NAME, lexer->cursor++, 1, lexer->line);
@@ -191,7 +272,7 @@ struct donsus_token donsus_lexer_next(donsus_lexer * lexer){
                     return token;
 
                 }
-
+                // check for number
                 if isdigit(*lexer->cursor){
                     struct donsus_token token;
                     token = donsus_token_identifier(DONSUS_NUMBER, lexer->cursor++, 1, lexer->line);
@@ -201,7 +282,10 @@ struct donsus_token donsus_lexer_next(donsus_lexer * lexer){
                     return token;
                 }
 
-                perror("CAN'T FIND TOKENS");
+
+                // Check for string
+
+                perror("CAN'T FIND TOKENS"); // Todo: Make this better in the future
                 // Throw an error message
 
             }
