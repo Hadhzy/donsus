@@ -1,0 +1,31 @@
+`50 points about Donsus`:
+
+(1)- Donsus is a compiler
+(2)- Donsus is statically typed, providing clean and efficient methods of static typing.
+(3)- Donsus has indentations as well as white space calculation(white space matters).
+(4)- Donsus is a language without the GIL.
+(5) - Donsus tends to be really FAST.
+(6) - Donsus supports multi parallelism(TRUE MULTI-THREADING).
+(7) - Donsus provides automatic memory management, although different from garbage collection.
+(8) - Donsus tends to support embedded programming and low-level interfaces
+(9) - The language's syntax should be relatively high-level, Python-like(NOT IDENTICIAL).
+(10)- Donsus is an object-oriented language.
+(11)- shorthand-keyword arguments.
+(12)- Should be the best option for scientific computing.
+(13)- New types: struct(record like type)?
+(14) - Donsus's functions are late-bound.
+(15)- Donsus is a JIT compiler.
+(16)- Donsus doesn't have any dependencies other than the c programming language.
+(17)- Donsus's parser is generated from the GRAMMAR FILE.
+(18)- Donsus's grammar is context-free.
+(19)- Donsus's ast is generated from(The Zephyr Abstract Syntax Description Language).
+(20)- async syntax support
+(21)- generators support
+(22) - Exception handling
+(23) - REALLY DETAILED ERROR MESSAGES
+(24) - Cross-platform support
+(25) -Add the possibility for creating a new type natively
+(26) -Mathematical operations/ideas can be inherited from: https://docs.julialang.org/en/v1/manual/mathematical-operations/
+While keeping the language high-level
+(27)- Vectorisation(similar to numpy arrays)
+
