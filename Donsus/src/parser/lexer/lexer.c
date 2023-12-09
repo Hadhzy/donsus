@@ -3,7 +3,6 @@
 #include <ctype.h> // dl_name_identifier
 #include <stdbool.h>
 #include <string.h>
-#include <langinfo.h>
 // Donsus internals
 #include "../Include/token.h"
 #include "../Include/lexer.h"
@@ -221,7 +220,7 @@ struct donsus_token donsus_lexer_next(donsus_lexer * lexer){
             }
 
             case '.': {
-                if (peek(lexer) == '.' && peek(lexer) == '.') return token_init(DONSUS_THREE_DOTS, lexer->cursor++, 3, lexer->line, "...");
+                if (peek(lexer) == '.' && peek(lexer) == '.')
                 return token_init(DONSUS_DOT, lexer->cursor++, 1, lexer->line, ".");
             }
 

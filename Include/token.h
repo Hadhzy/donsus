@@ -44,7 +44,7 @@ typedef enum _{
     DONSUS_COMMENT, // #
     DONSUS_SINGLE_QUOTE, // '
     DONSUS_DOUBLE_QUOTE, // "
-    DONSUS_THREE_DOTS // ..
+    DONSUS_THREE_DOTS // ...
 
 } donsus_token_kind;
 
