@@ -10,8 +10,6 @@
 #include "don_array.h"
 
 typedef struct donsus_token donsus_token;
-// Todo: lexer should be passed in everywhere
-
 
 char* _de_get_token_from_name(donsus_token_kind kind) {
     switch (kind) {
@@ -85,23 +83,18 @@ static bool isstring_continue(const char c){
 }
 
 static const char* next_identifier(donsus_lexer * lexer, donsus_token * token){
-    char * result = NULL;
-    char first = *--lexer->cursor;
     --token->size; // better solution in the future? TBD
-
     while (iscontinue(*lexer->cursor)) {
-        char* tmp = (char*)realloc(result, sizeof(char) * token->size); //
-        tmp[token->size] = *lexer->cursor; // *(tmp+token->size) = *lexer->cursor
-        lexer->cursor++;
-        token->size++;
-        result = tmp;
+        ++token->size;
+        ++lexer->cursor;
     }
-
-    result[0] = first;
+    char *result = malloc(token->size);
+    memcpy(result, lexer->cursor-token->size, token->size);
     return result;
 }
 
 static const char* next_number(donsus_lexer * lexer, donsus_token * token) {
+    // Todo: Same as next identifier, do not reallocate memory every time
     char * result = NULL;
     char first = *--lexer->cursor;
     while (isdigit(*lexer->cursor)){
@@ -265,7 +258,7 @@ struct donsus_token donsus_lexer_next(donsus_lexer * lexer){
 
                 // check for identifier
                 if (isstart(*lexer->cursor)) {
-                    struct donsus_token token = donsus_token_identifier(DONSUS_NAME, lexer->cursor++, 1, lexer->line);
+                    struct donsus_token token = donsus_token_identifier(DONSUS_NAME, lexer->cursor, 1, lexer->line);
                     const char * value = next_identifier(lexer, &token);
                     token.value = value;
 
