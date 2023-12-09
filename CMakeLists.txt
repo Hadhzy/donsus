@@ -1,10 +1,10 @@
 cmake_minimum_required(VERSION 3.22)
 
-
 project(donsus
         VERSION 0.1.0
         LANGUAGES C
 )
+
 
 set(CMAKE_BUILD_TYPE Debug)
 
@@ -33,6 +33,10 @@ add_executable(
 
 )
 
+target_compile_options(donsus
+        PRIVATE
+        -Wall -Wextra -Wpedantic
+)
 target_include_directories(
         donsus
         PUBLIC Include/
