@@ -7,14 +7,16 @@
 
 #define DEBUG 1 // false by default
 
-struct donsus_lexer{
-    char cur;
-    size_t position;
-    struct donsus_file* file_struct;
-    int source_id;
+typedef struct{
+    const char *string; // source code(file content)
+    const char *cursor; // tabs?
+    unsigned line; // line position
+} donsus_lexer;
 
-};
 
-struct donsus_file* new_lexer(struct donsus_file *file_struct);
+
+void de_printout_single_token(struct donsus_token token);
+struct donsus_token donsus_lexer_next(donsus_lexer * lexer);
+donsus_lexer new_lexer(struct donsus_file *file_struct);
 
 #endif

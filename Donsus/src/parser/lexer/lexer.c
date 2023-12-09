@@ -221,7 +221,7 @@ struct donsus_token donsus_lexer_next(donsus_lexer * lexer){
             }
 
             case '.': {
-                if (peek(lexer) == '.' && peek(lexer) == '.') return token_init(DONSUS_THREE_DOTS, lexer->cursor++, 3, lexer->line, "...");
+                if (peek(lexer) == '.' && peek(lexer) == '.')
                 return token_init(DONSUS_DOT, lexer->cursor++, 1, lexer->line, ".");
             }
 
