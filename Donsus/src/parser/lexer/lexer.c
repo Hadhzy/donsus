@@ -115,22 +115,7 @@ static const char * next_string(donsus_lexer * lexer, donsus_token * token){
     return result;
 }
 
-static char *int_to_string(int number) {
-    // Determine the number of digits in the integer
-    int digits = snprintf(NULL, 0, "%d", number);
 
-    // Allocate memory for the string, including space for the null-terminator
-    char *result = malloc(digits + 1);
-    if (result == NULL) {
-        // Handle allocation failure
-        exit(EXIT_FAILURE);
-    }
-
-    // Format the integer into the string
-    snprintf(result, digits + 1, "%d", number);
-
-    return result;
-}
 
 const char peek(donsus_lexer * lexer){
     char result = *++lexer->cursor;
@@ -147,20 +132,10 @@ struct donsus_token donsus_lexer_next(donsus_lexer * lexer){
                 return token_init(DONSUS_INDENT, lexer->cursor++,  1, lexer->line, NULL);
             }
 
-            case ' ': {
-                int space_counter = 0;
-                while (*lexer->cursor == ' ') {
-                    space_counter++;
-                    lexer->cursor++;
-                }
-                if(space_counter % 4 == 0) {
-                    int space_result = space_counter / 4;
-                    char *space_result_str = int_to_string(space_result);
-
-                    return token_init(DONSUS_INDENT, lexer->cursor, 1, lexer->line, space_result_str);
-                }
+            case ' ':
+                printf("Here");
+                lexer->cursor++;
                 break;
-            }
 
             case '\n':
                 lexer->cursor++; // go to the next character
