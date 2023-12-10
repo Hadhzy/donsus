@@ -16,9 +16,6 @@ int du_run_command(_DU_CONFIG* config, _DU_ARGV* args){
 
     #ifdef DEBUG
     de_printout_single_token(par.token);
-    de_printout_single_token(parser_next(&par));
-    de_printout_single_token(parser_next(&par));
-    de_printout_single_token(parser_next(&par));
     #endif
 
     return 0;
