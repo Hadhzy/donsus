@@ -2,7 +2,7 @@
 #include "../Include/internal/ducore_file.h" // handle_file
 #include "../Include/lexer.h" // new_lexer
 #include "../Include/parser.h" // parser_init
-
+#include "test/test.h" // test_parse
 
 int du_run_command(_DU_CONFIG* config, _DU_ARGV* args){
     // 4. layer
@@ -15,7 +15,7 @@ int du_run_command(_DU_CONFIG* config, _DU_ARGV* args){
     donsus_parser par = parser_init(&file_struct, new_lexer(result));
 
     #ifdef DEBUG
-    de_printout_single_token(par.token);
+    test_parse(&par);
     #endif
 
     return 0;
