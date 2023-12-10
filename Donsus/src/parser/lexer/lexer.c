@@ -7,7 +7,7 @@
 #include "../Include/token.h"
 #include "../Include/lexer.h"
 #include "don_array.h"
-
+#include "parser.h"
 typedef struct donsus_token donsus_token;
 
 char* _de_get_token_from_name(donsus_token_kind kind) {
@@ -116,6 +116,23 @@ static const char * next_string(donsus_lexer * lexer, donsus_token * token){
 }
 
 
+static char *int_to_string(int number) {
+    // Determine the number of digits in the integer
+    int digits = snprintf(NULL, 0, "%d", number);
+
+    // Allocate memory for the string, including space for the null-terminator
+    char *result = malloc(digits + 1);
+    if (result == NULL) {
+        // Handle allocation failure
+        exit(EXIT_FAILURE);
+    }
+
+    // Format the integer into the string
+    snprintf(result, digits + 1, "%d", number);
+
+    return result;
+}
+
 
 const char peek(donsus_lexer * lexer){
     char result = *++lexer->cursor;
@@ -129,13 +146,23 @@ struct donsus_token donsus_lexer_next(donsus_lexer * lexer){
 
             // Handles special line characters
             case '\t': {
-                return token_init(DONSUS_INDENT, lexer->cursor++,  1, lexer->line, NULL);
+                return token_init(DONSUS_INDENT, parser->lexer.cursor++,  1, parser->lexer.line, NULL);
             }
 
-            case ' ':
-                printf("Here");
-                lexer->cursor++;
+            case ' ': {
+                int space_counter = 0;
+                while (*parser->lexer.cursor == ' ') {
+                    space_counter++;
+                    parser->lexer.cursor++;
+                }
+                if(space_counter % 4 == 0) {
+                    int space_result = space_counter / 4;
+                    char *space_result_str = int_to_string(space_result);
+
+                    return token_init(DONSUS_INDENT, parser->lexer.cursor, 1, parser->lexer.line, space_result_str);
+                }
                 break;
+            }
 
             case '\n':
                 lexer->cursor++; // go to the next character
@@ -143,140 +170,140 @@ struct donsus_token donsus_lexer_next(donsus_lexer * lexer){
                 break;
 
             case '!':
-                return token_init(DONSUS_EXCLAMATION, lexer->cursor++, 1, lexer->line, "!");
+                return token_init(DONSUS_EXCLAMATION, parser->lexer.cursor++, 1, parser->lexer.line, "!");
 
             // Arithmetic operators
             case '+': {
-                if (peek(lexer) == '=') return token_init(DONSUS_PLUS_EQUAL, lexer->cursor++, 2, lexer->line, "+=") ;
-                if (peek(lexer) == '+') return token_init(DONSUS_INCREMENT, lexer->cursor++, 2, lexer->line, "++") ;
-                return token_init(DONSUS_PLUS, lexer->cursor++, 1, lexer->line, "+");
+                if (peek(parser) == '=') return token_init(DONSUS_PLUS_EQUAL, parser->lexer.cursor++, 2, parser->lexer.line, "+=") ;
+                if (peek(parser) == '+') return token_init(DONSUS_INCREMENT, parser->lexer.cursor++, 2, parser->lexer.line, "++") ;
+                return token_init(DONSUS_PLUS, parser->lexer.cursor++, 1, parser->lexer.line, "+");
             }
 
             case '-': {
-                if (peek(lexer) == '=') return token_init(DONSUS_MINUS_EQUAL, lexer->cursor++, 2, lexer->line, "-=");
-                if (peek(lexer) == '-') return token_init(DONSUS_DECREMENT, lexer->cursor++, 2, lexer->line, "--") ;
-                return token_init(DONSUS_MINUS, lexer->cursor++, 1, lexer->line, "-");
+                if (peek(parser)== '=') return token_init(DONSUS_MINUS_EQUAL, parser->lexer.cursor++, 2, parser->lexer.line, "-=");
+                if (peek(parser) == '-') return token_init(DONSUS_DECREMENT, parser->lexer.cursor++, 2, parser->lexer.line, "--") ;
+                return token_init(DONSUS_MINUS, parser->lexer.cursor++, 1, parser->lexer.line, "-");
             }
 
             case '*': {
-                if (peek(lexer) == '=') return token_init(DONSUS_STAR_EQUAL, lexer->cursor++, 2, lexer->line, "*=") ;
-                return token_init(DONSUS_STAR, lexer->cursor++, 1, lexer->line, "*");
+                if (peek(parser) == '=') return token_init(DONSUS_STAR_EQUAL, parser->lexer.cursor++, 2, parser->lexer.line, "*=") ;
+                return token_init(DONSUS_STAR, parser->lexer.cursor++, 1, parser->lexer.line, "*");
             }
 
             case '/': {
-                if (peek(lexer) == '=') return token_init(DONSUS_SLASH_EQUAL, lexer->cursor++, 2, lexer->line, "/=") ;
-                return token_init(DONSUS_SLASH, lexer->cursor++, 1, lexer->line, "/");
+                if (peek(parser) == '=') return token_init(DONSUS_SLASH_EQUAL, parser->lexer.cursor++, 2, parser->lexer.line, "/=") ;
+                return token_init(DONSUS_SLASH, parser->lexer.cursor++, 1, parser->lexer.line, "/");
             }
 
             case '=': {
-                if (peek(lexer) == '=') return token_init(DONSUS_DOUBLE_EQUAL, lexer->cursor++, 2, lexer->line, "==") ;
-                return token_init(DONSUS_EQUAL, lexer->cursor++, 1, lexer->line, "=");
+                if (peek(parser) == '=') return token_init(DONSUS_DOUBLE_EQUAL, parser->lexer.cursor++, 2, parser->lexer.line, "==") ;
+                return token_init(DONSUS_EQUAL, parser->lexer.cursor++, 1, parser->lexer.line, "=");
             }
 
             case '(': {
-                return token_init(DONSUS_LPAR, lexer->cursor++, 1, lexer->line, "(");
+                return token_init(DONSUS_LPAR, parser->lexer.cursor++, 1, parser->lexer.line, "(");
             }
 
             case ')': {
-                return token_init(DONSUS_RPAR, lexer->cursor++, 1, lexer->line, ")");
+                return token_init(DONSUS_RPAR, parser->lexer.cursor++, 1, parser->lexer.line, ")");
             }
 
             case '[': {
-                return token_init(DONSUS_LSQB, lexer->cursor++, 1, lexer->line, "[");
+                return token_init(DONSUS_LSQB, parser->lexer.cursor++, 1, parser->lexer.line, "[");
             }
 
             case ']': {
-                return token_init(DONSUS_RSQB, lexer->cursor++, 1, lexer->line, "]");
+                return token_init(DONSUS_RSQB, parser->lexer.cursor++, 1, parser->lexer.line, "]");
             }
 
             case '{': {
-                return token_init(DONSUS_LBRACE, lexer->cursor++, 1, lexer->line, "{");
+                return token_init(DONSUS_LBRACE, parser->lexer.cursor++, 1, parser->lexer.line, "{");
             }
 
             case '}': {
-                return token_init(DONSUS_RBRACE, lexer->cursor++, 1, lexer->line, "}");
+                return token_init(DONSUS_RBRACE, parser->lexer.cursor++, 1, parser->lexer.line, "}");
             }
 
             case '^': {
-                return token_init(DONSUS_CIRCUMFLEX, lexer->cursor++, 1, lexer->line, "^");
+                return token_init(DONSUS_CIRCUMFLEX, parser->lexer.cursor++, 1, parser->lexer.line, "^");
             }
 
             case ':': {
-                return token_init(DONSUS_COLO, lexer->cursor++, 1, lexer->line, ":");
+                return token_init(DONSUS_COLO, parser->lexer.cursor++, 1, parser->lexer.line, ":");
             }
 
             case ',': {
-                return token_init(DONSUS_COMM, lexer->cursor++, 1, lexer->line, ",");
+                return token_init(DONSUS_COMM, parser->lexer.cursor++, 1, parser->lexer.line, ",");
             }
 
             case '.': {
-                if (peek(lexer) == '.' && peek(lexer) == '.')
-                return token_init(DONSUS_DOT, lexer->cursor++, 1, lexer->line, ".");
+                if (peek(parser)== '.' && peek(parser) == '.')
+                return token_init(DONSUS_DOT, parser->lexer.cursor++, 1, parser->lexer.line, ".");
             }
 
             case '%': {
-                return token_init(DONSUS_PERCENT, lexer->cursor++, 1, lexer->line, "%");
+                return token_init(DONSUS_PERCENT, parser->lexer.cursor++, 1, parser->lexer.line, "%");
             }
 
             case '#': {
-                return token_init(DONSUS_COMMENT, lexer->cursor++, 1, lexer->line, "#");
+                return token_init(DONSUS_COMMENT, parser->lexer.cursor++, 1, parser->lexer.line, "#");
             }
 
             case '>': {
-                if (peek(lexer) == '=') return token_init(DONSUS_GREATER_EQUAL, lexer->cursor++, 2, lexer->line, ">=") ;
-                return token_init(DONSUS_GREATER, lexer->cursor++, 1, lexer->line, ">");
+                if (peek(parser) == '=') return token_init(DONSUS_GREATER_EQUAL, parser->lexer.cursor++, 2, parser->lexer.line, ">=") ;
+                return token_init(DONSUS_GREATER, parser->lexer.cursor++, 1, parser->lexer.line, ">");
             }
 
             case '<': {
-                if (peek(lexer) == '=') return token_init(DONSUS_LESS_EQUAL, lexer->cursor++, 2, lexer->line, "<=") ;
-                return token_init(DONSUS_LESS, lexer->cursor++, 1, lexer->line, "<");
+                if (peek(parser) == '=') return token_init(DONSUS_LESS_EQUAL, parser->lexer.cursor++, 2, parser->lexer.line, "<=") ;
+                return token_init(DONSUS_LESS, parser->lexer.cursor++, 1, parser->lexer.line, "<");
             }
             // DONSUS_STRING sdljfsdfjlsdlfjsd DONSUS_STRING
             case '"': {
                 // Add more stuff here
-                return token_init(DONSUS_DOUBLE_QUOTE, lexer->cursor++, 1, lexer->line, "\"");
+                return token_init(DONSUS_DOUBLE_QUOTE, parser->lexer.cursor++, 1, parser->lexer.line, "\"");
             }
 
 
             case '\'': {
                 // Add more stuff here
-                return token_init(DONSUS_SINGLE_QUOTE, lexer->cursor++, 1, lexer->line, "\'");
+                return token_init(DONSUS_SINGLE_QUOTE, parser->lexer.cursor++, 1, parser->lexer.line, "\'");
             }
 
             default: {
+                printf("cursor: %c\n", *parser->lexer.cursor);
                 //check for string
-                if (*--lexer->cursor == '"' || *lexer->cursor == '\'') {
-                    struct donsus_token token = donsus_token_identifier(DONSUS_STRING, lexer->cursor, 1, lexer->line);
-                    const char * value = next_string(lexer, &token);
+                if (*--parser->lexer.cursor == '"' || *parser->lexer.cursor == '\'') {
+                    struct donsus_token token = donsus_token_identifier(DONSUS_STRING, parser->lexer.cursor, 1, parser->lexer.line);
+                    const char * value = next_string(parser, &token);
                     token.value = value;
 
                     return token;
                 }
 
                 // check for identifier
-                *lexer->cursor++;
-                if (isstart(*lexer->cursor)) {
-                    struct donsus_token token = donsus_token_identifier(DONSUS_NAME, lexer->cursor, 1, lexer->line);
-                    const char * value = next_identifier(lexer, &token);
+                parser->lexer.cursor++; // it was decreased in the previous if statement
+                if (isstart(*parser->lexer.cursor)) {
+                    struct donsus_token token = donsus_token_identifier(DONSUS_NAME, parser->lexer.cursor, 1, parser->lexer.line);
+                    const char * value = next_identifier(parser, &token);
                     token.value = value;
 
                     return token;
 
                 }
                 // check for number
-                if (isdigit(*lexer->cursor)) {
+                if (isdigit(*parser->lexer.cursor)) {
                     struct donsus_token token;
-                    token = donsus_token_identifier(DONSUS_NUMBER, lexer->cursor++, 1, lexer->line);
-                    const char * value = next_number(lexer, &token);
+                    token = donsus_token_identifier(DONSUS_NUMBER, parser->lexer.cursor, 1, parser->lexer.line);
+                    const char * value = next_number(parser, &token);
                     token.value = value;
 
                     return token;
                 }
 
 
-                // Check for string
 
-                perror("CAN'T FIND TOKENS"); // Todo: Make this better in the future
+//                perror("CAN'T FIND TOKENS"); // Todo: Make this better in the future
                 // Throw an error message
 
             }
