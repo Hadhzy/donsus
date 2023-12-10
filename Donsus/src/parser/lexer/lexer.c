@@ -93,36 +93,25 @@ static const char* next_identifier(donsus_lexer * lexer, donsus_token * token){
 }
 
 static const char* next_number(donsus_lexer * lexer, donsus_token * token) {
-    // Todo: Same as next identifier, do not reallocate memory every time
-    char * result = NULL;
-    char first = *--lexer->cursor;
-    while (isdigit(*lexer->cursor)){
-        lexer->cursor++;
-        char* tmp = (char*)realloc(result, sizeof(char) * token->size);
-        tmp[token->size] = *lexer->cursor;
-        token->size++;
-        result = tmp;
+    while (isdigit(*lexer->cursor)) {
+        ++token->size;
+        ++lexer->cursor;
     }
-    --token->size;
-    result[0] = first;
+    char *result = malloc(token->size);
+    memcpy(result, lexer->cursor-token->size, token->size);
     return result;
 }
 
 
 static const char * next_string(donsus_lexer * lexer, donsus_token * token){
-    char * result = NULL;
-    char first = *--lexer->cursor;
+    ++lexer->cursor;
     --token->size; // better solution in the future? TBD
-
-    while (isstring_continue(*lexer->cursor)) {
-        char* tmp = (char*)realloc(result, sizeof(char) * token->size + 1); //
-        tmp[token->size] = *lexer->cursor; // *(tmp+token->size) = *lexer->cursor
-        lexer->cursor++;
-        token->size++;
-        result = tmp;
+    while (isstring_continue(*lexer->cursor) == true) {
+        ++token->size;
+        ++lexer->cursor;
     }
-
-    result[0] = first;
+    char *result = malloc(token->size);
+    memcpy(result, lexer->cursor-token->size, token->size);
     return result;
 }
 
@@ -144,6 +133,7 @@ struct donsus_token donsus_lexer_next(donsus_lexer * lexer){
             }
 
             case ' ':
+                printf("Here");
                 lexer->cursor++;
                 break;
 
@@ -254,8 +244,17 @@ struct donsus_token donsus_lexer_next(donsus_lexer * lexer){
             }
 
             default: {
+                //check for string
+                if (*--lexer->cursor == '"' || *lexer->cursor == '\'') {
+                    struct donsus_token token = donsus_token_identifier(DONSUS_STRING, lexer->cursor, 1, lexer->line);
+                    const char * value = next_string(lexer, &token);
+                    token.value = value;
+
+                    return token;
+                }
 
                 // check for identifier
+                *lexer->cursor++;
                 if (isstart(*lexer->cursor)) {
                     struct donsus_token token = donsus_token_identifier(DONSUS_NAME, lexer->cursor, 1, lexer->line);
                     const char * value = next_identifier(lexer, &token);
