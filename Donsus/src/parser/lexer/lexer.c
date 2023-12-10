@@ -115,7 +115,22 @@ static const char * next_string(donsus_lexer * lexer, donsus_token * token){
     return result;
 }
 
+static char *int_to_string(int number) {
+    // Determine the number of digits in the integer
+    int digits = snprintf(NULL, 0, "%d", number);
 
+    // Allocate memory for the string, including space for the null-terminator
+    char *result = malloc(digits + 1);
+    if (result == NULL) {
+        // Handle allocation failure
+        exit(EXIT_FAILURE);
+    }
+
+    // Format the integer into the string
+    snprintf(result, digits + 1, "%d", number);
+
+    return result;
+}
 
 const char peek(donsus_lexer * lexer){
     char result = *++lexer->cursor;
@@ -132,10 +147,20 @@ struct donsus_token donsus_lexer_next(donsus_lexer * lexer){
                 return token_init(DONSUS_INDENT, lexer->cursor++,  1, lexer->line, NULL);
             }
 
-            case ' ':
-                printf("Here");
-                lexer->cursor++;
+            case ' ': {
+                int space_counter = 0;
+                while (*lexer->cursor == ' ') {
+                    space_counter++;
+                    lexer->cursor++;
+                }
+                if(space_counter % 4 == 0) {
+                    int space_result = space_counter / 4;
+                    char *space_result_str = int_to_string(space_result);
+
+                    return token_init(DONSUS_INDENT, lexer->cursor, 1, lexer->line, space_result_str);
+                }
                 break;
+            }
 
             case '\n':
                 lexer->cursor++; // go to the next character
@@ -145,7 +170,7 @@ struct donsus_token donsus_lexer_next(donsus_lexer * lexer){
             case '!':
                 return token_init(DONSUS_EXCLAMATION, lexer->cursor++, 1, lexer->line, "!");
 
-            // Arithmetic operators
+                // Arithmetic operators
             case '+': {
                 if (peek(lexer) == '=') return token_init(DONSUS_PLUS_EQUAL, lexer->cursor++, 2, lexer->line, "+=") ;
                 if (peek(lexer) == '+') return token_init(DONSUS_INCREMENT, lexer->cursor++, 2, lexer->line, "++") ;
@@ -211,7 +236,7 @@ struct donsus_token donsus_lexer_next(donsus_lexer * lexer){
 
             case '.': {
                 if (peek(lexer) == '.' && peek(lexer) == '.')
-                return token_init(DONSUS_DOT, lexer->cursor++, 1, lexer->line, ".");
+                    return token_init(DONSUS_DOT, lexer->cursor++, 1, lexer->line, ".");
             }
 
             case '%': {
@@ -231,7 +256,7 @@ struct donsus_token donsus_lexer_next(donsus_lexer * lexer){
                 if (peek(lexer) == '=') return token_init(DONSUS_LESS_EQUAL, lexer->cursor++, 2, lexer->line, "<=") ;
                 return token_init(DONSUS_LESS, lexer->cursor++, 1, lexer->line, "<");
             }
-            // DONSUS_STRING sdljfsdfjlsdlfjsd DONSUS_STRING
+                // DONSUS_STRING sdljfsdfjlsdlfjsd DONSUS_STRING
             case '"': {
                 // Add more stuff here
                 return token_init(DONSUS_DOUBLE_QUOTE, lexer->cursor++, 1, lexer->line, "\"");
@@ -286,11 +311,11 @@ struct donsus_token donsus_lexer_next(donsus_lexer * lexer){
 }
 
 donsus_lexer new_lexer(struct donsus_file *file_struct) {
-        // create new lexer
-        donsus_lexer lexer;
-        lexer.string = file_struct->file_content;
-        lexer.cursor = file_struct->file_content;
-        lexer.line = 1;
+    // create new lexer
+    donsus_lexer lexer;
+    lexer.string = file_struct->file_content;
+    lexer.cursor = file_struct->file_content;
+    lexer.line = 1;
 
-        return lexer;
+    return lexer;
 }
