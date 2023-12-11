@@ -137,6 +137,12 @@ const char peek(donsus_lexer * lexer){
     return result;
 }
 
+struct donsus_token peek_for_token(donsus_lexer * lexer){
+    lexer->cursor++;
+    struct donsus_token token = donsus_lexer_next(lexer);
+    return token;
+}
+
 
 struct donsus_token donsus_lexer_next(donsus_lexer * lexer){
     while(*lexer->cursor) {
@@ -162,13 +168,17 @@ struct donsus_token donsus_lexer_next(donsus_lexer * lexer){
                 break;
             }
 
-            case '\n':
-                lexer->cursor++; // go to the next character
+            case '\n': {
+                // Problem here is that if we peek for the next token, we will increase the lexer->cursor and then if the token is not indent then we have to return back a dedent however the token then will be lost
+                // TODO: Fix this by having two separate lexers, one for peeking and one for the current token
+                lexer->cursor++;
                 lexer->line++;
                 break;
+            }
+
 
             case '!':
-                return token_init(DONSUS_EXCLAMATION, lexer->cursor++, 1, lexer->line, "!");
+                return token_init(DONSUS_EXCLAMATION, lexer->cursor, 1, lexer->line++, "!");
 
                 // Arithmetic operators
             case '+': {
