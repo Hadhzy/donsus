@@ -13,7 +13,7 @@ size_t get_file_size(FILE *file){
 }
 
 
-struct donsus_file* handle_file(_DU_ARGV * args, struct donsus_file* file_struct) {
+struct donsus_file* handle_file(DU_ARGV * args, struct donsus_file* file_struct) {
     char *path = args->argv[1]; // get the path
     FILE *file = fopen(path, "r");
 
@@ -23,10 +23,14 @@ struct donsus_file* handle_file(_DU_ARGV * args, struct donsus_file* file_struct
     }
 
     size_t size = get_file_size(file);
-    char* result = malloc(size);
+    char* result = malloc(size + 1);
 
-    size_t _counter = 0;
+    int _counter = 0;
     int c = fgetc(file);
+
+    if(c == EOF){
+        exit(1);
+    }
 
     result[_counter] = c;
 
@@ -37,8 +41,8 @@ struct donsus_file* handle_file(_DU_ARGV * args, struct donsus_file* file_struct
 
     }
 
-    fclose(file);
 
+    fclose(file);
     file_struct->file_content = result;
     file_struct->size = size;
 

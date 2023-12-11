@@ -4,14 +4,15 @@
 // Todo: Add more tokens/comment describing them, separate tokens system for operators, names .etc
 
 #define TOKEN_MAX_STRLEN 50
-typedef enum _{
-    // Identifier
+typedef enum{
+
     DONSUS_NAME, // IDENTIFIER
     DONSUS_NUMBER, // 69
     DONSUS_STRING, // "hello world"
     DONSUS_NEWLINE, // \n
     DONSUS_INDENT, //----something here
     DONSUS_DEDENT, // first token after indent
+    DONSUS_END, // mark the end of the code
 
     DONSUS_LPAR, // (
     DONSUS_RPAR, // )
@@ -44,7 +45,8 @@ typedef enum _{
     DONSUS_COMMENT, // #
     DONSUS_SINGLE_QUOTE, // '
     DONSUS_DOUBLE_QUOTE, // "
-    DONSUS_THREE_DOTS // ...
+    DONSUS_THREE_DOTS, // ...
+    DONSUS_NULL_VALUE
 
 } donsus_token_kind;
 
