@@ -50,6 +50,7 @@ char* de_get_token_from_name(donsus_token_kind kind) {
         case DONSUS_DOUBLE_QUOTE : return "DONSUS_DOUBLE_QUOTE";
         case DONSUS_THREE_DOTS: return "DONSUS_THREE_DOTS";
         case DONSUS_NULL_VALUE: return "DONSUS_NULL_VAL";
+        case DONSUS_END: return "DONSUS_END";
 
         default:
             return "UNKNOWN_TOKEN_KIND";
@@ -151,6 +152,7 @@ struct donsus_token donsus_lexer_next(donsus_parser *parser){
 
         ReRun:
         switch(*parser->lexer.cursor) {
+
 
             // Handles special line characters
             case '\t': {
