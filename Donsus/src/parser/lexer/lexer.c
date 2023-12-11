@@ -140,17 +140,17 @@ char peek(donsus_parser * parser){
     return result;
 }
 
-struct donsus_token peek_for_token(donsus_parser * parser){
+struct donsus_token peek_for_token(donsus_parser* parser){
     parser->lexer.cursor++;
-    struct donsus_token token = donsus_lexer_next(parser);
-    return token;
+    donsus_lexer old_lexer = parser->lexer;
+    parser->token = donsus_lexer_next(parser);
+    parser->lexer = old_lexer;
+    return parser->token;
 }
 
 
 struct donsus_token donsus_lexer_next(donsus_parser *parser){
     while(*parser->lexer.cursor) {
-
-        ReRun:
         switch(*parser->lexer.cursor) {
 
 
@@ -177,6 +177,9 @@ struct donsus_token donsus_lexer_next(donsus_parser *parser){
             case '\n': {
                 // Problem here is that if we peek for the next token, we will increase the lexer->cursor and then if the token is not indent then we have to return back a dedent however the token then will be lost
                 // TODO: Fix this by having two separate lexers, one for peeking and one for the current token
+                if (peek_for_token(parser).kind != DONSUS_INDENT){
+                    return token_init(DONSUS_DEDENT, parser->lexer.cursor, 1, parser->lexer.line, "");
+                }
                 parser->lexer.cursor++;
                 parser->lexer.line++;
                 break;
@@ -284,6 +287,7 @@ struct donsus_token donsus_lexer_next(donsus_parser *parser){
                 return token_init(DONSUS_SINGLE_QUOTE, parser->lexer.cursor++, 1, parser->lexer.line, "\'");
             }
 
+
             default: {
                 //check for string
                 if (*--parser->lexer.cursor == '"' || *parser->lexer.cursor == '\'') {
@@ -314,16 +318,12 @@ struct donsus_token donsus_lexer_next(donsus_parser *parser){
                     return token;
                 }
 
-
-                // Check for string
-
-                perror("CAN'T FIND TOKENS"); // Todo: Make this better in the future
-                // Throw an error message
-
             }
 
         }
+        return token_init(DONSUS_END, parser->lexer.cursor++, 3, parser->lexer.line, "END");
     }
+
 }
 
 donsus_lexer new_lexer(struct donsus_file *file_struct) {

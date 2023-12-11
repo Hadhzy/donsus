@@ -4,7 +4,7 @@
 #include "../Include/parser.h" // parser_init
 
 
-int du_run_command(_DU_CONFIG* config, _DU_ARGV* args){
+int du_run_command(DU_CONFIG* config, DU_ARGV* args){
     // 4. layer
 
     // handle inpout file
@@ -32,7 +32,7 @@ du_run_donsus(int *exitcode, DU_ARGV *args) {
     */
 
     // TBD
-    _DU_CONFIG config;
+    DU_CONFIG config;
     config.run_command = 1;
     config.run_module = 0;
     config.run_filename = 0;
@@ -45,7 +45,7 @@ du_run_donsus(int *exitcode, DU_ARGV *args) {
 }
 
 int
-du_main_run(_DU_ARGV *args){
+du_main_run(DU_ARGV *args){
     // 2. layer
     int exitcode = 0;
     du_run_donsus(&exitcode, args);
