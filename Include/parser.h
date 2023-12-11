@@ -2,7 +2,15 @@
 #define DU_PARSER_H
 #include <stdbool.h>
 #include "token.h"
-#include "lexer.h"
+#include "../Include/internal/ducore_file.h"
+#define DEBUG 1 // false by default
+
+typedef struct{
+    const char *string; // source code(file content)
+    const char *cursor; // tabs?
+    unsigned line; // line position
+} donsus_lexer;
+
 
 typedef struct {
     bool error;
