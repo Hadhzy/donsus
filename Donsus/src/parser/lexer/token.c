@@ -1,5 +1,5 @@
 #include "token.h"
-
+#include "stdlib.h"
 
 struct donsus_token token_init(donsus_token_kind type, const char *position, unsigned size, unsigned line, char* value) {
     struct donsus_token token;
