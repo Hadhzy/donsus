@@ -1,8 +1,6 @@
 #include "../Include/internal/ducore_init.h" // _DU_ARGB
 #include "../Include/internal/ducore_file.h" // handle_file
 #include "../Include/lexer.h" // new_lexer
-#include "../Include/parser.h" // parser_init
-
 
 int du_run_command(DU_CONFIG* config, DU_ARGV* args){
     // 4. layer
@@ -16,6 +14,27 @@ int du_run_command(DU_CONFIG* config, DU_ARGV* args){
 
     #ifdef DEBUG
     de_printout_single_token(par.token);
+    de_printout_single_token(parser_next(&par));
+    de_printout_single_token(parser_next(&par));
+    de_printout_single_token(parser_next(&par));
+    de_printout_single_token(parser_next(&par));
+    de_printout_single_token(parser_next(&par));
+    de_printout_single_token(parser_next(&par));
+    de_printout_single_token(parser_next(&par));
+    de_printout_single_token(parser_next(&par));
+    de_printout_single_token(parser_next(&par));
+    de_printout_single_token(parser_next(&par));
+    de_printout_single_token(parser_next(&par));
+    de_printout_single_token(parser_next(&par));
+    de_printout_single_token(parser_next(&par));
+    de_printout_single_token(parser_next(&par));
+    de_printout_single_token(parser_next(&par));
+    de_printout_single_token(parser_next(&par));
+    de_printout_single_token(parser_next(&par));
+    de_printout_single_token(parser_next(&par));
+    de_printout_single_token(parser_next(&par));
+    de_printout_single_token(parser_next(&par));
+    de_printout_single_token(parser_next(&par));
     #endif
 
     return 0;

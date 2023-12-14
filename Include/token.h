@@ -1,8 +1,6 @@
 #ifndef DU_TOKEN_H
 #define DU_TOKEN_H
 
-// Todo: Add more tokens/comment describing them, separate tokens system for operators, names .etc
-
 #define TOKEN_MAX_STRLEN 50
 typedef enum{
 
@@ -10,8 +8,6 @@ typedef enum{
     DONSUS_NUMBER, // 69
     DONSUS_STRING, // "hello world"
     DONSUS_NEWLINE, // \n
-    DONSUS_INDENT, //----something here
-    DONSUS_DEDENT, // first token after indent
     DONSUS_END, // mark the end of the code
 
     DONSUS_LPAR, // (
@@ -46,20 +42,17 @@ typedef enum{
     DONSUS_SINGLE_QUOTE, // '
     DONSUS_DOUBLE_QUOTE, // "
     DONSUS_THREE_DOTS, // ...
-    DONSUS_NULL_VALUE
-
 } donsus_token_kind;
 
 
 struct donsus_token{
-    donsus_token_kind kind;
-    const char* position;
-    unsigned size;
-    const char * value;
-    unsigned line;
+    donsus_token_kind kind; // the type of the tokens from donsus_token_kind
+    const char* value; // the value of the token as a string
+    unsigned length; // the length of the token as an unsigned integer
+    unsigned line; // the line where the token was created
 };
 
-struct donsus_token token_init(donsus_token_kind type, const char * position, unsigned length, unsigned line, char* value);
-struct donsus_token donsus_token_identifier(donsus_token_kind type, const char*position, unsigned size, unsigned line);
+struct donsus_token* token_init(donsus_token_kind kind, unsigned length, unsigned line, char * value,  struct donsus_token * token);
+struct donsus_token donsus_token_identifier(donsus_token_kind type, unsigned length, unsigned line);
 
 #endif // DU_TOKEN_H

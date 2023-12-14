@@ -26,10 +26,9 @@ add_executable(
         Donsus/src/parser/parser.c
 
         # error/
-        Donsus/error/lexer_error.c
 
-        # test/
-        test/test.c
+        # tests/
+        tests/test_lexer.c
 
 )
 

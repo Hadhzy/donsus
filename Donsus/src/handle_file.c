@@ -38,7 +38,6 @@ struct donsus_file* handle_file(DU_ARGV * args, struct donsus_file* file_struct)
         c = fgetc(file);
         _counter++;
         result[_counter] = c;
-
     }
 
 

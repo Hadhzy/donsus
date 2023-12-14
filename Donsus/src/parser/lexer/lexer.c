@@ -4,11 +4,9 @@
 #include <stdbool.h>
 #include <string.h>
 // Donsus internals
-#include "../Include/token.h"
 #include "../Include/lexer.h"
+#include "../Include/parser.h"
 #include "don_array.h"
-
-typedef struct donsus_token donsus_token;
 
 static
 char* de_get_token_from_name(donsus_token_kind kind) {
@@ -17,8 +15,6 @@ char* de_get_token_from_name(donsus_token_kind kind) {
         case DONSUS_NUMBER: return "DONSUS_NUMBER";
         case DONSUS_STRING: return "DONSUS_STRING";
         case DONSUS_NEWLINE: return "DONSUS_NEWLINE";
-        case DONSUS_INDENT: return "DONSUS_INDENT";
-        case DONSUS_DEDENT: return "DONSUS_DEDENT";
         case DONSUS_LPAR: return "DONSUS_LPAR";
         case DONSUS_RPAR: return "DONSUS_RPAR";
         case DONSUS_LSQB: return "DONSUS_LSQB";
@@ -49,7 +45,6 @@ char* de_get_token_from_name(donsus_token_kind kind) {
         case DONSUS_SINGLE_QUOTE : return "DONSUS_SINGLE_QUOTE";
         case DONSUS_DOUBLE_QUOTE : return "DONSUS_DOUBLE_QUOTE";
         case DONSUS_THREE_DOTS: return "DONSUS_THREE_DOTS";
-        case DONSUS_NULL_VALUE: return "DONSUS_NULL_VAL";
         case DONSUS_END: return "DONSUS_END";
 
         default:
@@ -58,16 +53,16 @@ char* de_get_token_from_name(donsus_token_kind kind) {
 }
 
 
-void de_printout_single_token(donsus_token token){
+void de_printout_single_token(struct donsus_token token){
     printf("------------------------\n");
     printf("Name: %s\n", de_get_token_from_name(token.kind));
 
     char buffer[TOKEN_MAX_STRLEN];
-    snprintf(buffer, TOKEN_MAX_STRLEN, "%.*s", token.size, token.value);
+    snprintf(buffer, TOKEN_MAX_STRLEN, "%.*s", token.length, token.value);
 
     printf("Value: %s\n", buffer);
     printf("Line: %d\n", token.line);
-    printf("Size: %d\n", token.size);
+    printf("length: %d\n", token.length);
     printf("------------------------\n");
 }
 
@@ -84,254 +79,415 @@ static bool isstring_continue(const char c){
     return true;
 }
 
-static const char* next_identifier(donsus_lexer * lexer, donsus_token * token){
-    --token->size; // better solution in the future? TBD
+/*static const char* next_identifier(donsus_lexer * lexer, donsus_token * token){
+    --token->length; // better solution in the future? TBD
     while (iscontinue(*lexer->cursor)) {
-        ++token->size;
+        ++token->length;
         ++lexer->cursor;
     }
-    char *result = malloc(token->size);
-    memcpy(result, lexer->cursor-token->size, token->size);
+    char *result = malloc(token->length);
+    memcpy(result, lexer->cursor-token->length, token->length);
     return result;
 }
 
 static const char* next_number(donsus_lexer * lexer, donsus_token * token) {
     while (isdigit(*lexer->cursor)) {
-        ++token->size;
+        ++token->length;
         ++lexer->cursor;
     }
-    char *result = malloc(token->size);
-    memcpy(result, lexer->cursor-token->size, token->size);
+    char *result = malloc(token->length);
+    memcpy(result, lexer->cursor-token->length, token->length);
     return result;
 }
+*/
 
-
-static const char * next_string(donsus_lexer * lexer, donsus_token * token){
-    ++lexer->cursor;
-    --token->size; // better solution in the future? TBD
-    while (isstring_continue(*lexer->cursor) == true) {
-        ++token->size;
-        ++lexer->cursor;
+static const char * next_string(donsus_parser * parser , donsus_token * token){
+    while (isstring_continue(*parser->lexer->cur_char) == true) {
+        ++token->length;
+        eat(parser);
     }
-    char *result = malloc(token->size);
-    memcpy(result, lexer->cursor-token->size, token->size);
+    char *result = malloc(token->length);
+    memcpy(result, parser->lexer.string-token->length, token->length);
     return result;
 }
 
-static char *int_to_string(int number) {
-    // Determine the number of digits in the integer
-    int digits = snprintf(NULL, 0, "%d", number);
-
-    // Allocate memory for the string, including space for the null-terminator
-    char *result = malloc(digits + 1);
-    if (result == NULL) {
-        // Handle allocation failure
-        exit(EXIT_FAILURE);
-    }
-
-    // Format the integer into the string
-    snprintf(result, digits + 1, "%d", number);
-
-    return result;
-}
 
 char peek(donsus_parser * parser){
-    char result = *++parser->lexer.cursor;
-    return result;
+    // return next character
+    if (parser->lexer.string[parser->lexer.cur_pos + 1] != EOF){
+        return parser->lexer.string[parser->lexer.cur_pos + 1];
+    }
+    printf("Am I here 2?");
+    return '\0';
 }
 
 struct donsus_token peek_for_token(donsus_parser* parser){
-    parser->lexer.cursor++;
+    // return next token
     donsus_lexer old_lexer = parser->lexer;
     parser->token = donsus_lexer_next(parser);
     parser->lexer = old_lexer;
     return parser->token;
 }
 
+bool eat(donsus_parser *parser){
+    // Increase the current position by one and set the character to the next one
+    if ((parser->lexer.cur_char = parser->lexer.string[++parser->lexer.cur_pos]) != '\0'){
+        return true;
+    }
+    return false;
+}
 
-struct donsus_token donsus_lexer_next(donsus_parser *parser){
-    while(*parser->lexer.cursor) {
-        switch(*parser->lexer.cursor) {
 
+struct donsus_token donsus_lexer_next(donsus_parser *parser) {
+    struct donsus_token token;
+    struct donsus_token *cur_token = token_init(DONSUS_END, "", 0, 0, &token);
 
-            // Handles special line characters
-            case '\t': {
-                return token_init(DONSUS_INDENT, parser->lexer.cursor++,  1, parser->lexer.line, NULL);
+    switch(parser->lexer.cur_char){
+        case '\r':
+        case '\t':
+        case ' ': {
+
+            if(eat(parser) == false){
+                cur_token->kind = DONSUS_END;
+                cur_token->line = parser->lexer.cur_line;
+                return *cur_token;
             }
 
-            case ' ': {
-                int space_counter = 0;
-                while (*parser->lexer.cursor == ' ') {
-                    space_counter++;
-                    *parser->lexer.cursor++;
-                }
-                if(space_counter % 4 == 0) {
-                    int space_result = space_counter / 4;
-                    char *space_result_str = int_to_string(space_result);
+            break;
+        }
 
-                    return token_init(DONSUS_INDENT, parser->lexer.cursor, 1, parser->lexer.line, space_result_str);
-                }
-                break;
+        case '\n': {
+            cur_token->line = ++parser->lexer.cur_line;
+            cur_token->kind = DONSUS_NEWLINE;
+            cur_token->length = 1;
+            eat(parser);
+            return *cur_token;
+        }
+
+        case '!': {
+            cur_token->kind = DONSUS_EXCLAMATION;
+            cur_token->length = 1;
+            cur_token->value = "!";
+            cur_token->line = parser->lexer.cur_line;
+            eat(parser);
+            return *cur_token;
+        }
+
+        case '+': {
+            if (peek(parser) == '='){
+                eat(parser);
+                cur_token->kind = DONSUS_PLUS_EQUAL;
+                cur_token->length = 2;
+                cur_token->value = "+=";
+                cur_token->line = parser->lexer.cur_line;
+                eat(parser);
+                return *cur_token;
             }
 
-            case '\n': {
-                // Problem here is that if we peek for the next token, we will increase the lexer->cursor and then if the token is not indent then we have to return back a dedent however the token then will be lost
-                // TODO: Fix this by having two separate lexers, one for peeking and one for the current token
-                if (peek_for_token(parser).kind != DONSUS_INDENT){
-                    return token_init(DONSUS_DEDENT, parser->lexer.cursor, 1, parser->lexer.line, "");
-                }
-                parser->lexer.cursor++;
-                parser->lexer.line++;
-                break;
+            if (peek(parser) == '+'){
+                eat(parser);
+                cur_token->kind = DONSUS_INCREMENT;
+                cur_token->length = 2;
+                cur_token->value = "++";
+                cur_token->line = parser->lexer.cur_line;
+                eat(parser);
+                return *cur_token;
             }
 
-
-            case '!':
-                return token_init(DONSUS_EXCLAMATION, parser->lexer.cursor, 1, parser->lexer.line++, "!");
-
-                // Arithmetic operators
-            case '+': {
-                if (peek(parser) == '=') return token_init(DONSUS_PLUS_EQUAL, parser->lexer.cursor++, 2, parser->lexer.line, "+=") ;
-                if (peek(parser) == '+') return token_init(DONSUS_INCREMENT, parser->lexer.cursor++, 2, parser->lexer.line, "++") ;
-                return token_init(DONSUS_PLUS, parser->lexer.cursor++, 1, parser->lexer.line, "+");
-            }
-
-            case '-': {
-                if (peek(parser) == '=') return token_init(DONSUS_MINUS_EQUAL, parser->lexer.cursor++, 2, parser->lexer.line, "-=");
-                if (peek(parser) == '-') return token_init(DONSUS_DECREMENT, parser->lexer.cursor++, 2, parser->lexer.line, "--") ;
-                return token_init(DONSUS_MINUS, parser->lexer.cursor++, 1, parser->lexer.line, "-");
-            }
-
-            case '*': {
-                if (peek(parser) == '=') return token_init(DONSUS_STAR_EQUAL, parser->lexer.cursor++, 2, parser->lexer.line, "*=") ;
-                return token_init(DONSUS_STAR, parser->lexer.cursor++, 1, parser->lexer.line, "*");
-            }
-
-            case '/': {
-                if (peek(parser) == '=') return token_init(DONSUS_SLASH_EQUAL, parser->lexer.cursor++, 2, parser->lexer.line, "/=") ;
-                return token_init(DONSUS_SLASH, parser->lexer.cursor++, 1, parser->lexer.line, "/");
-            }
-
-            case '=': {
-                if (peek(parser) == '=') return token_init(DONSUS_DOUBLE_EQUAL, parser->lexer.cursor++, 2, parser->lexer.line, "==") ;
-                return token_init(DONSUS_EQUAL, parser->lexer.cursor++, 1, parser->lexer.line, "=");
-            }
-
-            case '(': {
-                return token_init(DONSUS_LPAR, parser->lexer.cursor++, 1, parser->lexer.line, "(");
-            }
-
-            case ')': {
-                return token_init(DONSUS_RPAR, parser->lexer.cursor++, 1, parser->lexer.line, ")");
-            }
-
-            case '[': {
-                return token_init(DONSUS_LSQB, parser->lexer.cursor++, 1, parser->lexer.line, "[");
-            }
-
-            case ']': {
-                return token_init(DONSUS_RSQB, parser->lexer.cursor++, 1, parser->lexer.line, "]");
-            }
-
-            case '{': {
-                return token_init(DONSUS_LBRACE, parser->lexer.cursor++, 1, parser->lexer.line, "{");
-            }
-
-            case '}': {
-                return token_init(DONSUS_RBRACE, parser->lexer.cursor++, 1, parser->lexer.line, "}");
-            }
-
-            case '^': {
-                return token_init(DONSUS_CIRCUMFLEX, parser->lexer.cursor++, 1, parser->lexer.line, "^");
-            }
-
-            case ':': {
-                return token_init(DONSUS_COLO, parser->lexer.cursor++, 1, parser->lexer.line, ":");
-            }
-
-            case ',': {
-                return token_init(DONSUS_COMM, parser->lexer.cursor++, 1, parser->lexer.line, ",");
-            }
-
-            case '.': {
-                if (peek(parser) == '.' && peek(parser) == '.')
-                    return token_init(DONSUS_DOT, parser->lexer.cursor++, 1, parser->lexer.line, ".");
-            }
-
-            case '%': {
-                return token_init(DONSUS_PERCENT, parser->lexer.cursor++, 1, parser->lexer.line, "%");
-            }
-
-            case '#': {
-                return token_init(DONSUS_COMMENT, parser->lexer.cursor++, 1, parser->lexer.line, "#");
-            }
-
-            case '>': {
-                if (peek(parser) == '=') return token_init(DONSUS_GREATER_EQUAL, parser->lexer.cursor++, 2, parser->lexer.line, ">=") ;
-                return token_init(DONSUS_GREATER, parser->lexer.cursor++, 1, parser->lexer.line, ">");
-            }
-
-            case '<': {
-                if (peek(parser) == '=') return token_init(DONSUS_LESS_EQUAL, parser->lexer.cursor++, 2, parser->lexer.line, "<=") ;
-                return token_init(DONSUS_LESS, parser->lexer.cursor++, 1, parser->lexer.line, "<");
-            }
-                // DONSUS_STRING sdljfsdfjlsdlfjsd DONSUS_STRING
-            case '"': {
-                // Add more stuff here
-                return token_init(DONSUS_DOUBLE_QUOTE, parser->lexer.cursor++, 1, parser->lexer.line, "\"");
-            }
-
-
-            case '\'': {
-                // Add more stuff here
-                return token_init(DONSUS_SINGLE_QUOTE, parser->lexer.cursor++, 1, parser->lexer.line, "\'");
-            }
-
-
-            default: {
-                //check for string
-                if (*--parser->lexer.cursor == '"' || *parser->lexer.cursor == '\'') {
-                    struct donsus_token token = donsus_token_identifier(DONSUS_STRING, parser->lexer.cursor, 1, parser->lexer.line);
-                    const char * value = next_string(&parser->lexer, &token);
-                    token.value = value;
-
-                    return token;
-                }
-
-                // check for identifier
-                *parser->lexer.cursor++;
-                if (isstart(*parser->lexer.cursor)) {
-                    struct donsus_token token = donsus_token_identifier(DONSUS_NAME, parser->lexer.cursor, 1, parser->lexer.line);
-                    const char * value = next_identifier(&parser->lexer, &token);
-                    token.value = value;
-
-                    return token;
-
-                }
-                // check for number
-                if (isdigit(*parser->lexer.cursor)) {
-                    struct donsus_token token;
-                    token = donsus_token_identifier(DONSUS_NUMBER, parser->lexer.cursor++, 1, parser->lexer.line);
-                    const char * value = next_number(&parser->lexer, &token);
-                    token.value = value;
-
-                    return token;
-                }
-
-            }
+            cur_token->kind = DONSUS_PLUS;
+            cur_token->length = 1;
+            cur_token->value = "+";
+            cur_token->line = parser->lexer.cur_line;
+            eat(parser);
+            return *cur_token;
 
         }
-        return token_init(DONSUS_END, parser->lexer.cursor++, 3, parser->lexer.line, "END");
+
+        case '-':{
+            if (peek(parser) == '='){
+                eat(parser);
+                cur_token->kind = DONSUS_MINUS_EQUAL;
+                cur_token->length = 2;
+                cur_token->value = "-=";
+                cur_token->line = parser->lexer.cur_line;
+                eat(parser);
+                return *cur_token;
+            }
+
+            if (peek(parser) == '-'){
+                eat(parser);
+                cur_token->kind = DONSUS_DECREMENT;
+                cur_token->length = 2;
+                cur_token->value = "--";
+                cur_token->line = parser->lexer.cur_line;
+                eat(parser);
+                return *cur_token;
+            }
+
+            cur_token->kind = DONSUS_MINUS;
+            cur_token->length = 1;
+            cur_token->value = "-";
+            cur_token->line = parser->lexer.cur_line;
+            eat(parser);
+            return *cur_token;
+        }
+
+        case '*': {
+            if (peek(parser) == '=') {
+                eat(parser);
+                cur_token->kind = DONSUS_STAR_EQUAL;
+                cur_token->length = 2;
+                cur_token->value = "*=";
+                cur_token->line = parser->lexer.cur_line;
+                eat(parser);
+                return *cur_token;
+            }
+
+            cur_token->kind = DONSUS_STAR;
+            cur_token->length = 1;
+            cur_token->value = "*";
+            cur_token->line = parser->lexer.cur_line;
+            eat(parser);
+            return *cur_token;
+        }
+
+        case '/': {
+            if (peek(parser) == '=') {
+                eat(parser);
+                cur_token->kind = DONSUS_SLASH_EQUAL;
+                cur_token->length = 2;
+                cur_token->value = "/=";
+                cur_token->line = parser->lexer.cur_line;
+                eat(parser);
+                return *cur_token;
+            }
+
+            cur_token->kind = DONSUS_SLASH;
+            cur_token->length = 1;
+            cur_token->value = "/";
+            cur_token->line = parser->lexer.cur_line;
+            eat(parser);
+            return *cur_token;
+        }
+
+        case '=': {
+            if (peek(parser) == '=') {
+                eat(parser);
+                cur_token->kind = DONSUS_DOUBLE_EQUAL;
+                cur_token->length = 2;
+                cur_token->value = "==";
+                cur_token->line = parser->lexer.cur_line;
+                eat(parser);
+                return *cur_token;
+            }
+
+            cur_token->kind = DONSUS_EQUAL;
+            cur_token->length = 1;
+            cur_token->value = "=";
+            cur_token->line = parser->lexer.cur_line;
+            eat(parser);
+            return *cur_token;
+        }
+
+        case '(': {
+            cur_token->kind = DONSUS_LPAR;
+            cur_token->length = 1;
+            cur_token->value = "(";
+            cur_token->line = parser->lexer.cur_line;
+            eat(parser);
+            return *cur_token;
+        }
+
+        case ')': {
+            cur_token->kind = DONSUS_RPAR;
+            cur_token->length = 1;
+            cur_token->value = ")";
+            cur_token->line = parser->lexer.cur_line;
+            eat(parser);
+            return *cur_token;
+        }
+
+        case '[': {
+            cur_token->kind = DONSUS_LSQB;
+            cur_token->length = 1;
+            cur_token->value = "[";
+            cur_token->line = parser->lexer.cur_line;
+            eat(parser);
+            return *cur_token;
+        }
+
+        case ']': {
+            cur_token->kind = DONSUS_RSQB;
+            cur_token->length = 1;
+            cur_token->value = "]";
+            cur_token->line = parser->lexer.cur_line;
+            eat(parser);
+            return *cur_token;
+        }
+
+        case ':': {
+            cur_token->kind = DONSUS_COLO;
+            cur_token->length = 1;
+            cur_token->value = ":";
+            cur_token->line = parser->lexer.cur_line;
+            eat(parser);
+            return *cur_token;
+        }
+
+        case ',': {
+            cur_token->kind = DONSUS_COMM;
+            cur_token->length = 1;
+            cur_token->value = ",";
+            cur_token->line = parser->lexer.cur_line;
+            eat(parser);
+            return *cur_token;
+        }
+
+        case '.': {
+            cur_token->kind = DONSUS_DOT;
+            cur_token->length = 1;
+            cur_token->value = ".";
+            cur_token->line = parser->lexer.cur_line;
+            eat(parser);
+            return *cur_token;
+        }
+
+        case '%': {
+            cur_token->kind = DONSUS_PERCENT;
+            cur_token->length = 1;
+            cur_token->value = "%";
+            cur_token->line = parser->lexer.cur_line;
+            eat(parser);
+            return *cur_token;
+        }
+
+        case '{': {
+            cur_token->kind = DONSUS_LBRACE;
+            cur_token->length = 1;
+            cur_token->value = "{";
+            cur_token->line = parser->lexer.cur_line;
+            eat(parser);
+            return *cur_token;
+        }
+
+        case '}': {
+            cur_token->kind = DONSUS_RBRACE;
+            cur_token->length = 1;
+            cur_token->value = "}";
+            cur_token->line = parser->lexer.cur_line;
+            eat(parser);
+            return *cur_token;
+        }
+
+        case '^': {
+            cur_token->kind = DONSUS_CIRCUMFLEX;
+            cur_token->length = 1;
+            cur_token->value = "^";
+            cur_token->line = parser->lexer.cur_line;
+            eat(parser);
+            return *cur_token;
+        }
+
+        case '#': {
+            cur_token->kind = DONSUS_COMMENT;
+            cur_token->length = 1;
+            cur_token->value = "#";
+            cur_token->line = parser->lexer.cur_line;
+            eat(parser);
+            return *cur_token;
+        }
+
+        case '\'': {
+            cur_token->kind = DONSUS_SINGLE_QUOTE;
+            cur_token->length = 1;
+            cur_token->value = "'";
+            cur_token->line = parser->lexer.cur_line;
+            eat(parser);
+            return *cur_token;
+        }
+
+        case '"': {
+            cur_token->kind = DONSUS_DOUBLE_QUOTE;
+            cur_token->length = 1;
+            cur_token->value = "\"";
+            cur_token->line = parser->lexer.cur_line;
+            eat(parser);
+            return *cur_token;
+        }
+
+        case '<': {
+            if (peek(parser) == '=') {
+                eat(parser);
+                cur_token->kind = DONSUS_LESS_EQUAL;
+                cur_token->length = 2;
+                cur_token->value = "<=";
+                cur_token->line = parser->lexer.cur_line;
+                eat(parser);
+                return *cur_token;
+            }
+
+            cur_token->kind = DONSUS_LESS;
+            cur_token->length = 1;
+            cur_token->value = "<";
+            cur_token->line = parser->lexer.cur_line;
+            eat(parser);
+            return *cur_token;
+        }
+
+        case '>': {
+            if (peek(parser) == '=') {
+                eat(parser);
+                cur_token->kind = DONSUS_GREATER_EQUAL;
+                cur_token->length = 2;
+                cur_token->value = ">=";
+                cur_token->line = parser->lexer.cur_line;
+                eat(parser);
+                return *cur_token;
+            }
+
+            cur_token->kind = DONSUS_GREATER;
+            cur_token->length = 1;
+            cur_token->value = ">";
+            cur_token->line = parser->lexer.cur_line;
+            eat(parser);
+            return *cur_token;
+        }
+
+        case '"':
+        case '\'': {
+            cur_token->kind = DONSUS_STRING;
+            cur_token->length = 1;
+            struct donsus_token token = donsus_token_identifier(DONSUS_STRING, 1, parser->lexer.cur_line);
+            cur_token->value = next_string(parser, &token);
+            cur_token->line = parser->lexer.cur_line;
+            eat(parser);
+            return *cur_token;
+        }
+
+        default:
+            // NUMBER
+            // END TOKEN
+            // ERROR handling
+            if (peek(parser) == '\0'){
+                printf("Am I getting here");
+                cur_token->kind = DONSUS_END;
+                cur_token->line = parser->lexer.cur_line;
+                return *cur_token;
+            }
+            return *cur_token;
+
     }
 
 }
+
 
 donsus_lexer new_lexer(struct donsus_file *file_struct) {
     // create new lexer
     donsus_lexer lexer;
     lexer.string = file_struct->file_content;
-    lexer.cursor = file_struct->file_content;
-    lexer.line = 1;
+    lexer.cur_char = file_struct->file_content[0];
+    lexer.cur_pos = 0;
+    lexer.cur_line = 1;
 
     return lexer;
 }
