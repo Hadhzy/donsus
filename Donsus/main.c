@@ -19,6 +19,3 @@ int main (int argc, char **argv){
     return Du_Main(argc, argv); // start layer 1 main
 
 };
-
-// python.exe mypython.py
-

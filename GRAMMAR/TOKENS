@@ -3,8 +3,6 @@ NAME
 NUMBER
 STRING
 NEWLINE
-INDENT
-DEDENT
 
 LPAR                    '('
 RPAR                    ')'
