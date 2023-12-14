@@ -479,7 +479,6 @@ struct donsus_token donsus_lexer_next(donsus_parser *parser) {
 
             // END TOKEN
             if (peek(parser) == '\0'){
-                printf("Am I getting here");
                 cur_token->kind = DONSUS_END;
                 cur_token->line = parser->lexer.cur_line;
                 return *cur_token;
