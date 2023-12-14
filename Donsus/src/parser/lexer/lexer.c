@@ -79,37 +79,6 @@ static bool isstring_continue(const char c){
     return true;
 }
 
-/*static const char* next_identifier(donsus_lexer * lexer, donsus_token * token){
-    --token->length; // better solution in the future? TBD
-    while (iscontinue(*lexer->cursor)) {
-        ++token->length;
-        ++lexer->cursor;
-    }
-    char *result = malloc(token->length);
-    memcpy(result, lexer->cursor-token->length, token->length);
-    return result;
-}
-
-static const char* next_number(donsus_lexer * lexer, donsus_token * token) {
-    while (isdigit(*lexer->cursor)) {
-        ++token->length;
-        ++lexer->cursor;
-    }
-    char *result = malloc(token->length);
-    memcpy(result, lexer->cursor-token->length, token->length);
-    return result;
-}
-*/
-
-static const char * next_string(donsus_parser * parser , donsus_token * token){
-    while (isstring_continue(*parser->lexer->cur_char) == true) {
-        ++token->length;
-        eat(parser);
-    }
-    char *result = malloc(token->length);
-    memcpy(result, parser->lexer.string-token->length, token->length);
-    return result;
-}
 
 
 char peek(donsus_parser * parser){
@@ -117,7 +86,6 @@ char peek(donsus_parser * parser){
     if (parser->lexer.string[parser->lexer.cur_pos + 1] != EOF){
         return parser->lexer.string[parser->lexer.cur_pos + 1];
     }
-    printf("Am I here 2?");
     return '\0';
 }
 
@@ -137,10 +105,52 @@ bool eat(donsus_parser *parser){
     return false;
 }
 
+static const char* next_number(donsus_parser * parser, struct donsus_token * token) {
+    eat(parser);
+    while (isdigit(parser->lexer.cur_char)) {
+        ++token->length;
+        eat(parser);
+    }
+    char *result = malloc(token->length);
+    memcpy(result, parser->lexer.string, token->length);
+    return result;
+}
+
+static const char* next_identifier(donsus_parser * parser, struct donsus_token * token){
+    eat(parser);
+    while (iscontinue(parser->lexer.cur_char) == true) {
+        ++token->length;
+        eat(parser);
+    }
+    char *result = malloc(token->length);
+    memcpy(result, parser->lexer.string, token->length);
+    return result;
+}
+
+// remove quotes from string
+static void remove_quotes(char *result){
+    // remove quotes from string
+    char *result_out = malloc(strlen(result) - 2);
+    memcpy(result, result + 1, strlen(result) - 2);
+    result = result_out;
+}
+
+static const char * next_string(donsus_parser * parser , struct donsus_token * token){
+    eat(parser);
+    while (isstring_continue(parser->lexer.cur_char) == true) {
+        ++token->length;
+        eat(parser);
+    }
+    char *result = malloc(token->length);
+    memcpy(result, parser->lexer.string, token->length);
+    remove_quotes(result);
+    return result;
+}
+
 
 struct donsus_token donsus_lexer_next(donsus_parser *parser) {
     struct donsus_token token;
-    struct donsus_token *cur_token = token_init(DONSUS_END, "", 0, 0, &token);
+    struct donsus_token *cur_token = token_init(DONSUS_END, (unsigned int) "", 0, 0, &token);
 
     switch(parser->lexer.cur_char){
         case '\r':
@@ -159,7 +169,7 @@ struct donsus_token donsus_lexer_next(donsus_parser *parser) {
         case '\n': {
             cur_token->line = ++parser->lexer.cur_line;
             cur_token->kind = DONSUS_NEWLINE;
-            cur_token->length = 1;
+            cur_token->length = 5;
             eat(parser);
             return *cur_token;
         }
@@ -397,24 +407,6 @@ struct donsus_token donsus_lexer_next(donsus_parser *parser) {
             return *cur_token;
         }
 
-        case '\'': {
-            cur_token->kind = DONSUS_SINGLE_QUOTE;
-            cur_token->length = 1;
-            cur_token->value = "'";
-            cur_token->line = parser->lexer.cur_line;
-            eat(parser);
-            return *cur_token;
-        }
-
-        case '"': {
-            cur_token->kind = DONSUS_DOUBLE_QUOTE;
-            cur_token->length = 1;
-            cur_token->value = "\"";
-            cur_token->line = parser->lexer.cur_line;
-            eat(parser);
-            return *cur_token;
-        }
-
         case '<': {
             if (peek(parser) == '=') {
                 eat(parser);
@@ -456,18 +448,36 @@ struct donsus_token donsus_lexer_next(donsus_parser *parser) {
         case '"':
         case '\'': {
             cur_token->kind = DONSUS_STRING;
-            cur_token->length = 1;
-            struct donsus_token token = donsus_token_identifier(DONSUS_STRING, 1, parser->lexer.cur_line);
-            cur_token->value = next_string(parser, &token);
+            cur_token->length = 0;
+            cur_token->value = next_string(parser, cur_token);
             cur_token->line = parser->lexer.cur_line;
+            printf("last_char: %c\n", parser->lexer.cur_char);
             eat(parser);
+            printf("last_char1: %c\n", parser->lexer.cur_char);
             return *cur_token;
         }
 
         default:
-            // NUMBER
-            // END TOKEN
             // ERROR handling
+            // IDENTIFIER
+            if(isstart(parser->lexer.cur_char)){
+                cur_token->kind = DONSUS_NAME;
+                cur_token->length = 0;
+                cur_token->value = next_identifier(parser, cur_token);
+                cur_token->line = parser->lexer.cur_line;
+                return *cur_token;
+            }
+
+            // NUMBER
+            if(isdigit(parser->lexer.cur_char)){
+                cur_token->kind = DONSUS_NUMBER;
+                cur_token->length = 0;
+                cur_token->value = next_number(parser, cur_token);
+                cur_token->line = parser->lexer.cur_line;
+                return *cur_token;
+            }
+
+            // END TOKEN
             if (peek(parser) == '\0'){
                 printf("Am I getting here");
                 cur_token->kind = DONSUS_END;
