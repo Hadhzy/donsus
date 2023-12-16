@@ -60,10 +60,6 @@ int du_run_command(DU_CONFIG* config, DU_ARGV* args){
     de_printout_single_token(parser_next(&par));
     de_printout_single_token(parser_next(&par));
     de_printout_single_token(parser_next(&par));
-    de_printout_single_token(parser_next(&par));
-    de_printout_single_token(parser_next(&par));
-    de_printout_single_token(parser_next(&par));
-    de_printout_single_token(parser_next(&par));
     #endif
 
     return 0;

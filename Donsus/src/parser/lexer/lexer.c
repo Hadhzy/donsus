@@ -74,12 +74,10 @@ static bool iscontinue(char c){
     return isstart(c) || isdigit(c);
 }
 
-static bool isstring_continue(const char c){
+static bool isstring_continue(char c){
     if(c == '\'' || c == '"') return false;
     return true;
 }
-
-
 
 char peek(donsus_parser * parser){
     // return next character
@@ -105,28 +103,6 @@ bool eat(donsus_parser *parser){
     return false;
 }
 
-static const char* next_number(donsus_parser * parser, struct donsus_token * token) {
-    eat(parser);
-    while (isdigit(parser->lexer.cur_char)) {
-        ++token->length;
-        eat(parser);
-    }
-    char *result = malloc(token->length);
-    memcpy(result, parser->lexer.string, token->length);
-    return result;
-}
-
-static const char* next_identifier(donsus_parser * parser, struct donsus_token * token){
-    eat(parser);
-    while (iscontinue(parser->lexer.cur_char) == true) {
-        ++token->length;
-        eat(parser);
-    }
-    char *result = malloc(token->length);
-    memcpy(result, parser->lexer.string, token->length);
-    return result;
-}
-
 // remove quotes from string
 static void remove_quotes(char *result){
     // remove quotes from string
@@ -135,18 +111,42 @@ static void remove_quotes(char *result){
     result = result_out;
 }
 
-static const char * next_string(donsus_parser * parser , struct donsus_token * token){
-    eat(parser);
-    while (isstring_continue(parser->lexer.cur_char) == true) {
-        ++token->length;
-        eat(parser);
+
+static char* get_characters_between_pos(donsus_parser * parser, int start, int end){
+    char *result = malloc(end - start + 1);
+    for (int i = start; i < end; i++ ){
+        result[i - start] = parser->lexer.string[i];
     }
-    char *result = malloc(token->length);
-    memcpy(result, parser->lexer.string, token->length);
-    remove_quotes(result);
     return result;
 }
 
+static char* next_number(donsus_parser * parser, struct donsus_token * token, int start_pos) {
+    while (isdigit(parser->lexer.cur_char)){
+        token->length++;
+        eat(parser);
+    }
+    return get_characters_between_pos(parser, start_pos, parser->lexer.cur_pos);
+}
+
+static char* next_identifier(donsus_parser * parser, struct donsus_token * token, int start_pos){
+    while (iscontinue(parser->lexer.cur_char)){
+        token->length++;
+        eat(parser);
+    }
+    return get_characters_between_pos(parser, start_pos, parser->lexer.cur_pos);
+}
+
+static char * next_string(donsus_parser * parser , struct donsus_token * token, int start_pos){
+    eat(parser);
+    while (isstring_continue(parser->lexer.cur_char)){
+        token->length++;
+        eat(parser);
+    }
+    eat(parser);
+    char* result = get_characters_between_pos(parser, start_pos, parser->lexer.cur_pos);
+    remove_quotes(result);
+    return result;
+}
 
 struct donsus_token donsus_lexer_next(donsus_parser *parser) {
     struct donsus_token token;
@@ -169,7 +169,7 @@ struct donsus_token donsus_lexer_next(donsus_parser *parser) {
         case '\n': {
             cur_token->line = ++parser->lexer.cur_line;
             cur_token->kind = DONSUS_NEWLINE;
-            cur_token->length = 5;
+            cur_token->length = 1;
             eat(parser);
             return *cur_token;
         }
@@ -449,11 +449,9 @@ struct donsus_token donsus_lexer_next(donsus_parser *parser) {
         case '\'': {
             cur_token->kind = DONSUS_STRING;
             cur_token->length = 0;
-            cur_token->value = next_string(parser, cur_token);
+            cur_token->value = next_string(parser, cur_token, parser->lexer.cur_pos);
             cur_token->line = parser->lexer.cur_line;
-            printf("last_char: %c\n", parser->lexer.cur_char);
             eat(parser);
-            printf("last_char1: %c\n", parser->lexer.cur_char);
             return *cur_token;
         }
 
@@ -463,7 +461,7 @@ struct donsus_token donsus_lexer_next(donsus_parser *parser) {
             if(isstart(parser->lexer.cur_char)){
                 cur_token->kind = DONSUS_NAME;
                 cur_token->length = 0;
-                cur_token->value = next_identifier(parser, cur_token);
+                cur_token->value = next_identifier(parser, cur_token, parser->lexer.cur_pos);
                 cur_token->line = parser->lexer.cur_line;
                 return *cur_token;
             }
@@ -472,7 +470,7 @@ struct donsus_token donsus_lexer_next(donsus_parser *parser) {
             if(isdigit(parser->lexer.cur_char)){
                 cur_token->kind = DONSUS_NUMBER;
                 cur_token->length = 0;
-                cur_token->value = next_number(parser, cur_token);
+                cur_token->value = next_number(parser, cur_token, parser->lexer.cur_pos);
                 cur_token->line = parser->lexer.cur_line;
                 return *cur_token;
             }
